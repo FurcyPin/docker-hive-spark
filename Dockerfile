@@ -1,6 +1,12 @@
 FROM openjdk:8-jdk
 MAINTAINER Furcy Pin
 
+# Update package repository
+RUN apt-get update
+
+# Install Readline Wrapper
+RUN apt-get install -y rlwrap && rm -rf /var/lib/apt/lists/*
+
 # Install sbt
 ENV SBT_VERSION 0.13.15
 RUN wget http://dl.bintray.com/sbt/debian/sbt-${SBT_VERSION}.deb -O /tmp/sbt.deb && \
@@ -39,13 +45,14 @@ RUN curl -sL \
   && mkdir -p /data/hive/ \
   && mkdir -p $HIVE_CONF_DIR \
   && chmod 777 $HIVE_HOME/hcatalog/var/log \
-  && chmod 777 $HIVE_HOME/var/log 
+  && chmod 777 $HIVE_HOME/var/log
 
-RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/aws-java-sdk-1.7.4.jar $HIVE_HOME/lib/. 
-RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/hadoop-aws-2.7.3.jar $HIVE_HOME/lib/. 
+# Install S3 jars for Hive
+RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/aws-java-sdk-1.7.4.jar $HIVE_HOME/lib/.
+RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/hadoop-aws-2.7.3.jar $HIVE_HOME/lib/.
 
 # Install Spark
-ENV SPARK_VERSION=2.2.0
+ENV SPARK_VERSION=2.3.1
 ENV SPARK_HOME=/opt/spark-$SPARK_VERSION-bin-hadoop2.7
 ENV SPARK_CONF_DIR=$SPARK_HOME/conf
 ENV PATH $PATH:$SPARK_HOME/bin
@@ -57,14 +64,16 @@ RUN curl -sL \
   && mkdir -p /data/spark/ \
   && mkdir -p $SPARK_HOME/logs \
   && mkdir -p $SPARK_CONF_DIR \
-  && chmod 777 $SPARK_HOME/logs 
+  && chmod 777 $SPARK_HOME/logs
 
-# Install Readline Wrapper
-RUN apt-get update && apt-get install -y rlwrap \
- && rm -rf /var/lib/apt/lists/*
+# Install S3 jars for Spark
+RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/aws-java-sdk-1.7.4.jar $SPARK_HOME/jars/.
+RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/hadoop-aws-2.7.3.jar $SPARK_HOME/jars/.
 
-RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/aws-java-sdk-1.7.4.jar $SPARK_HOME/jars/. 
-RUN ln -s $HADOOP_HOME/share/hadoop/tools/lib/hadoop-aws-2.7.3.jar $SPARK_HOME/jars/. 
+# Install mssql-jdbc driver for Spark
+ENV MSSQL_JDBC_VERSION=6.4.0.jre8
+RUN wget http://central.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/$MSSQL_JDBC_VERSION/mssql-jdbc-$MSSQL_JDBC_VERSION.jar -O $SPARK_HOME/jars/mssql-jdbc-$MSSQL_JDBC_VERSION.jar
+
 
 # Configure
 ADD files/hive-site.xml $HIVE_CONF_DIR/
