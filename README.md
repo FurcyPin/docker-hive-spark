@@ -28,6 +28,16 @@ It will start a docker that will automatically:
 *In case you wonder what the part with the USER and USER_ID is about: 
 it is a kind of docker-voodoo-danse to prevent docker writing stuff as root in the external volume.*
 
+*To run in docker-compose:*
+
+    hive-spark:
+      image: fpin/docker-hive-spark
+      container_name: hive-spark
+      ports:
+        - "4040:4040"
+        - "9083:9083"
+        - "10000:10000"
+      entrypoint: ["./start.sh"]
 
 ### Accessing Amazon s3
 This docker has Hive and Spark preconfigured to support Hive tables on Amazon s3.
